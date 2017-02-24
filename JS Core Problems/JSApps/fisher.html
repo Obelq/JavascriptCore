@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Biggest Catch</title>
+    <script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
+    <style>
+        h1 { text-align: center; }
+        input { display: block; }
+        div { border: 1px solid black; padding: 5px; display: inline-table; width: 24%; }
+        div#aside { margin-top: 8px; width: 15%; border: 2px solid grey; }
+        div#catches{ width:auto; }
+        button { display: inline-table; margin: 5% 0 5% 5%; width: 39%; }
+        button.add { width: 90%; }
+        button.load { width: 90%; padding: 10px; }
+        button.load { vertical-align: top; }
+        fieldset { display: inline-table; vertical-align: top; }
+        fieldset#main { width: 70%; }
+    </style>
+</head>
+<body>
+<h1>Biggest Catches</h1>
+<fieldset id="main">
+    <legend>Catches</legend>
+    <div id="catches">
+        <div class="catch" data-id="<id-goes-here>">
+            <label>Angler</label>
+            <input type="text" class="angler" value="Paulo Amorim"/>
+            <label>Weight</label>
+            <input type="number" class="weight" value="636"/>
+            <label>Species</label>
+            <input type="text" class="species" value="Atlantic Blue Marlin"/>
+            <label>Location</label>
+            <input type="text" class="location" value="Vitória, Brazil"/>
+            <label>Bait</label>
+            <input type="text" class="bait" value="trolled pink"/>
+            <label>Capture Time</label>
+            <input type="number" class="captureTime" value="80"/>
+            <button class="update">Update</button>
+            <button class="delete">Delete</button>
+        </div>
+    </div>
+</fieldset>
+<div id="aside">
+    <button class="load">Load</button>
+    <fieldset id="addForm">
+        <legend>Add Catch</legend>
+        <label>Angler</label>
+        <input type="text" class="angler"/>
+        <label>Weight</label>
+        <input type="number" class="weight"/>
+        <label>Species</label>
+        <input type="text" class="species"/>
+        <label>Location</label>
+        <input type="text" class="location"/>
+        <label>Bait</label>
+        <input type="text" class="bait"/>
+        <label>Capture Time</label>
+        <input type="number" class="captureTime"/>
+        <button class="add">Add</button>
+    </fieldset>
+</div>
+<script>
+    $(function attachEvents() {
+        const kinveyAppId = "kid_rkLGsRSMe";
+        const serviceUrl = "https://baas.kinvey.com/appdata/" + kinveyAppId+"/biggestCatches";
+        const kinveyUsername = "peter";
+        const kinveyPassword = "p";
+        const base64auth = btoa(kinveyUsername + ":" + kinveyPassword);
+        const authHeaders = { "Authorization": "Basic " + base64auth };
+
+        let url = "https://baas.kinvey.com/apdata/kid_rkLGsRSMe/biggestCatches";
+        $(".load").click(function (ev) {
+            readData();
+        });
+
+        function readData() {
+            $('#catches').empty();
+            $.ajax({
+                url: serviceUrl,
+                headers: authHeaders
+            }).then(function (data) {
+
+                for (let ulov of data) {
+                    let div = $(`<div class="catch" data-id="${ulov._id}">
+                    <label>Angler</label>
+                    <input type="text" class="angler" value="${ulov.angler}"/>
+                    <label>Weight</label>
+                    <input type="number" class="weight" value="${ulov.weight}"/>
+                    <label>Species</label>
+                    <input type="text" class="species" value="${ulov.species}"/>
+                    <label>Location</label>
+                    <input type="text" class="location" value="${ulov.location}"/>
+                    <label>Bait</label>
+                    <input type="text" class="bait" value="${ulov.bait}"/>
+                    <label>Capture Time</label>
+                    <input type="number" class="captureTime" value="${ulov.captureTime}"/>
+                </div>`);
+                    $(`<button class="update">Update</button>`).click(function () {
+                        updateCatch(ulov._id)
+                    }).appendTo(div);
+                    $(`<button class="delete">Delete</button>`).click(function () {
+                        deleteCatch(ulov._id)
+                    }).appendTo(div);
+                    div.appendTo('#catches');
+                }
+            })
+        }
+        function updateCatch(id) {
+            let af = $(`div[data-id="${id}"]`);
+            let obj = JSON.stringify({
+                "angler":af.find('.angler').val(),
+                "weight":af.find('.weight').val(),
+                "species":af.find('.species').val(),
+                "location":af.find('.location').val(),
+                "bait":af.find('.bait').val(),
+                "captureTime":af.find('.captureTime').val()});
+            $.ajax({
+                type: "PUT",
+                url: serviceUrl+"/"+id,
+                headers: authHeaders,
+                contentType: 'application/json',
+                data: obj
+
+            }).then(function (data) {
+                readData();
+            });
+        }
+        function deleteCatch(id) {
+            $.ajax({
+                type: "DELETE",
+                url: serviceUrl+"/"+id,
+                headers: authHeaders,
+                contentType: 'application/json'
+            }).then(function (data) {
+                readData();
+            });
+        }
+        $(".add").click(function (ev) {
+            let af = $('#addForm');
+            let obj = JSON.stringify({
+                "angler":af.find('.angler').val(),
+                "weight":af.find('.weight').val(),
+                "species":af.find('.species').val(),
+                "location":af.find('.location').val(),
+                "bait":af.find('.bait').val(),
+                "captureTime":af.find('.captureTime').val()});
+            $.ajax({
+                type: "POST",
+                url: serviceUrl,
+                headers: authHeaders,
+                contentType: 'application/json',
+                data: obj
+
+            }).then(function (data) {
+                readData();
+            });
+        })
+
+
+
+
+    })
+</script>
+</body>
+</html>

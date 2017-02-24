@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Blog</title>
+    <script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
+
+</head>
+<body>
+<h1>All Countries</h1>
+<button id="btnLoadCountries">Load</button>
+<select id="countries"></select>
+<button id="btnDeleteCountry">Delete</button>
+<input id="addText" type="text">
+<button id="btnAddCountry">Add</button>
+
+<button id="btnViewCountry">View</button>
+
+<h1 id="post-title">Current country's towns</h1>
+<ul id="towns"></ul>
+<script>
+    $(function () {
+        const kinveyAppId = "kid_BybBnwYfl";
+        const serviceUrl = "https://baas.kinvey.com/appdata/" + kinveyAppId;
+        const kinveyUsername = "guest";
+        const kinveyPassword = "guest";
+        const base64auth = btoa(kinveyUsername + ":" + kinveyPassword);
+        const authHeaders = { "Authorization": "Basic " + base64auth };
+
+        $("#btnLoadCountries").click(loadCountriesClicked);
+        $("#btnViewCountry").click(loadTowns);
+        $("#btnAddCountry").click(addCountry);
+        $("#btnDeleteCountry").click(deleteCountry);
+        
+        function loadCountriesClicked() {
+            $.ajax({
+                method:"GET",
+                url: serviceUrl+"/countries",
+                headers: authHeaders
+            }).then(displayCountriesInDropDown)
+                    .catch(displayError)
+        }
+        function displayCountriesInDropDown(countries) {
+            for (let country of countries){
+                let option = $("<option>");
+                option.text(country.name);
+                option.val(country._id);
+                $("#countries").append(option)
+            }
+        }
+        function addCountry() {
+            let newCountry = $('#addText');
+            let newCountryText = newCountry.val();
+            let obj = JSON.stringify({name: newCountryText});
+            newCountry.val("");
+            $.ajax({
+                method:"POST",
+                url: serviceUrl+"/countries",
+                headers: authHeaders,
+                contentType: 'application/json',
+                data: obj
+            }).then(loadCountriesClicked)
+                    .catch(displayError)
+        }
+        function deleteCountry() {
+            let selectedCountryId = $('#countries option:selected').val();
+
+            $.ajax({
+                method:"DELETE",
+                url: serviceUrl+"/countries/"+selectedCountryId,
+                headers: authHeaders
+            }).then(loadCountriesClicked)
+                    .catch(displayError)
+        }
+        function loadTowns() {
+            $.ajax({
+                method:"GET",
+                url: serviceUrl+"/towns",
+                headers: authHeaders
+            }).then(displayTowns)
+                    .catch(displayError)
+        }
+        function displayTowns(towns) {
+            let currentCountry = $('#countries option:selected');
+            let townsList = $("#towns");
+            townsList.empty();
+            for (let town of towns){
+                if(town.country==currentCountry.text()){
+                    let option = $("<li>");
+                    option.text(town.name);
+                    townsList.append(option)
+                }
+
+            }
+        }
+
+        function displayError(err) {
+            let errorDiv = $("<div>").text("Error: " +
+                    err.status + ' (' + err.statusText + ')');
+            $(document.body).prepend(errorDiv);
+            setTimeout(function() {
+                $(errorDiv).fadeOut(function() {
+                    $(errorDiv).remove();
+                });
+            }, 3000);
+
+        }
+    })
+</script>
+</body>
+</html>

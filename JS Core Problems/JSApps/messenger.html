@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Messenger</title>
+    <style>
+        label {
+            display: inline-block;
+            width: 5em;
+        }
+
+        #author, #content {
+            width: 30em;
+        }
+    </style>
+    <script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
+</head>
+<body>
+<div id="main">
+    <textarea id="messages" cols="80" rows="12"></textarea>
+    <div id="controls">
+        <label for="author">Name: </label><input id="author" type="text"><br>
+        <label for="content">Message: </label><input id="content" type="text">
+        <input id="submit" type="button" value="Send">
+        <input id="refresh" type="button" value="Refresh">
+    </div>
+</div>
+<script>
+    $(function attachEvents() {
+        $('#refresh').click(loadMessages);
+        $('#submit').click(postMessage);
+        let url = 'https://ajax-f8b05.firebaseio.com/messenger';
+        $.post(url+'.json', seed);
+        function loadMessages() {
+            let textarea = $('#messages');
+            textarea.val('');
+            $.get(url+'.json')
+                    .then(function (data) {
+                        let arr = Object.keys(data);
+                        arr.sort((a,b)=>data[a].timestamp-data[b].timestamp);
+                        for(let i of arr){
+                           textarea.val(textarea.val()+`${data[i].author}: ${data[i].content}\n`)
+                        }
+                    }).catch(function (err) {
+                            textarea.val('Error');
+            })
+        }
+        function postMessage() {
+            let author = $('#author').val();
+            let content = $('#content').val();
+            let newMessage = JSON.stringify({
+                author: author,
+                content: content,
+                timestamp: new Date()
+            });
+            $.post(url+'.json', newMessage);
+            $('#author').val('');
+            $('#content').val('');
+        }
+    })
+</script>
+</body>
+</html>
